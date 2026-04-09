@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Mini Mario 2D</title>
+<style>
+  body { margin:0; background:#87ceeb; }
+  canvas { display:block; margin:auto; background:#5c94fc; }
+</style>
+</head>
+<body>
+
+<canvas id="game" width="800" height="400"></canvas>
+
+<script>
+const c = document.getElementById("game");
+const ctx = c.getContext("2d");
+
+let level = 1;
+
+// PLAYER
+let p = {x:50,y:300,w:30,h:40,dy:0,g:0.5,j:-10,ground:false};
+
+// DATA
+let coins=[], mobs=[];
+
+function load(l){
+  coins=[]; mobs=[];
+  if(l==1){
+    coins=[{x:200,y:300},{x:400,y:250},{x:600,y:300}];
+    mobs=[{x:300,y:320,w:30,h:30,d:1}];
+  }
+  if(l==2){
+    coins=[{x:150,y:300},{x:350,y:200},{x:650,y:300}];
+    mobs=[{x:250,y:320,w:30,h:30,d:1},{x:500,y:320,w:30,h:30,d:-1}];
+  }
+}
+load(level);
+
+// CONTROL
+let k={};
+onkeydown=e=>k[e.key]=1;
+onkeyup=e=>k[e.key]=0;
+
+// UPDATE
+function update(){
+  if(k["ArrowRight"]) p.x+=4;
+  if(k["ArrowLeft"]) p.x-=4;
+
+  if(k[" "] && p.ground){ p.dy=p.j; p.ground=false; }
+
+  p.dy+=p.g; p.y+=p.dy;
+
+  if(p.y>300){ p.y=300; p.dy=0; p.ground=true; }
+
+  // COIN
+  coins = coins.filter(o=>!(p.x<o.x+20&&p.x+p.w>o.x&&p.y<o.y+20&&p.y+p.h>o.y));
+
+  // MONSTER
+  mobs.forEach(m=>{
+    m.x+=m.d*2;
+    if(m.x<0||m.x>770) m.d*=-1;
+
+    if(p.x<m.x+m.w&&p.x+p.w>m.x&&p.y<m.y+m.h&&p.y+p.h>m.y){
+      if(p.dy>0){ mobs=mobs.filter(x=>x!=m); p.dy=-6; }
+      else{ alert("Game Over"); location.reload(); }
+    }
+  });
+
+  // NEXT LEVEL
+  if(coins.length==0){
+    level++;
+    if(level>2){ alert("You Win!"); location.reload(); }
+    else{ p.x=50; load(level); }
+  }
+}
+
+// DRAW
+function draw(){
+  ctx.clearRect(0,0,800,400);
+
+  // PLAYER
+  ctx.fillStyle="black";
+  ctx.fillRect(p.x,p.y,p.w,p.h);
+
+  // COIN
+  ctx.fillStyle="gold";
+  coins.forEach(o=>{
+    ctx.beginPath();
+    ctx.arc(o.x,o.y,10,0,Math.PI*2);
+    ctx.fill();
+  });
+
+  // MONSTER
+  ctx.fillStyle="red";
+  mobs.forEach(m=>ctx.fillRect(m.x,m.y,m.w,m.h));
+
+  ctx.fillStyle="white";
+  ctx.fillText("Level: "+level,10,20);
+}
+
+// LOOP
+function loop(){
+  update(); draw();
+  requestAnimationFrame(loop);
+}
+loop();
+</script>
+
+</body>
+</html>
